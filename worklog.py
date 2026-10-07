@@ -41,6 +41,7 @@ SECTIONS = {
 
 
 JIRA_DISPLAY_NAMES = {
+    "epic": "Epic",
     "feature": "Feature",
     "flow-value": "Flow Value",
     "flow-accelerator": "Flow Accelerator",
@@ -50,6 +51,7 @@ JIRA_DISPLAY_NAMES = {
 
 
 JIRA_HEADING_NAMES = {
+    "EPIC": "epic",
     "FEATURE": "feature",
     "FLOW VALUE": "flow-value",
     "FLOW ACCELERATOR": "flow-accelerator",
@@ -172,7 +174,10 @@ def insert_line_into_section(
     )
 
 
-def add_to_section(section, text):
+def add_to_section(
+    section,
+    text,
+):
     file = create_daily_file()
 
     if section == "Actions":
@@ -190,22 +195,26 @@ def add_to_section(section, text):
     print(f"  {text}")
 
 
-def add_entry(entry_type, text):
+def add_entry(
+    entry_type,
+    text,
+):
     add_to_section(
         SECTIONS[entry_type],
         text,
     )
 
 
-def extract_section(content, section):
+def extract_section(
+    content,
+    section,
+):
     heading = f"## {section}"
-
-    lines = content.splitlines()
 
     found = False
     results = []
 
-    for line in lines:
+    for line in content.splitlines():
 
         if line == heading:
             found = True
@@ -220,6 +229,29 @@ def extract_section(content, section):
             )
 
     return results
+
+
+def extract_section_first_value(
+    markdown,
+    section_name,
+):
+    heading = f"## {section_name}"
+
+    found = False
+
+    for line in markdown.splitlines():
+
+        if line.strip() == heading:
+            found = True
+            continue
+
+        if found and line.startswith("## "):
+            return None
+
+        if found and line.strip():
+            return line.strip()
+
+    return None
 
 
 # ============================================================
@@ -305,11 +337,14 @@ def show_tasks():
     print("\nOPEN")
 
     if open_tasks:
+
         for number, task in enumerate(
             open_tasks,
             start=1,
         ):
-            text = clean_task_text(task)
+            text = clean_task_text(
+                task
+            )
 
             origin_match = re.search(
                 r"<!--\s*from:(.*?)\s*-->",
@@ -332,6 +367,7 @@ def show_tasks():
     print("\nCOMPLETED")
 
     if completed_tasks:
+
         for number, task in enumerate(
             completed_tasks,
             start=1,
@@ -340,6 +376,7 @@ def show_tasks():
                 f"{number}. "
                 f"{clean_task_text(task)}"
             )
+
     else:
         print("No completed tasks.")
 
@@ -358,7 +395,9 @@ def complete_task(task_number):
     )
 
     if not tasks:
-        print("No open tasks for today.")
+        print(
+            "No open tasks for today."
+        )
         return
 
     if not 1 <= task_number <= len(tasks):
@@ -402,10 +441,8 @@ def undo_task(task_number):
         encoding="utf-8",
     )
 
-    tasks = (
-        get_completed_tasks_for_file(
-            file
-        )
+    tasks = get_completed_tasks_for_file(
+        file
     )
 
     if not tasks:
@@ -450,7 +487,7 @@ def undo_task(task_number):
 
 
 # ============================================================
-# Carry tasks
+# Carry unfinished tasks
 # ============================================================
 
 def get_log_dates():
@@ -468,6 +505,7 @@ def get_log_dates():
                     file.stem
                 )
             )
+
         except ValueError:
             continue
 
@@ -500,7 +538,9 @@ def mark_task_carried(
         encoding="utf-8",
     )
 
-    text = clean_task_text(task)
+    text = clean_task_text(
+        task
+    )
 
     carried = (
         f"- [>] {text} "
@@ -542,7 +582,10 @@ def carry_from_day(
     count = 0
 
     for task in tasks:
-        text = clean_task_text(task)
+
+        text = clean_task_text(
+            task
+        )
 
         normalized = text.lower()
 
@@ -580,7 +623,9 @@ def carry_from_day(
     return count
 
 
-def carry_tasks(carry_all=False):
+def carry_tasks(
+    carry_all=False,
+):
     today = date.today()
 
     today_file = create_daily_file(
@@ -596,12 +641,15 @@ def carry_tasks(carry_all=False):
     }
 
     if carry_all:
+
         source_days = [
             day
             for day in get_log_dates()
             if day < today
         ]
+
     else:
+
         previous = (
             get_previous_log_date()
         )
@@ -612,11 +660,14 @@ def carry_tasks(carry_all=False):
             )
             return
 
-        source_days = [previous]
+        source_days = [
+            previous
+        ]
 
     total = 0
 
     for source_day in source_days:
+
         total += carry_from_day(
             source_day,
             today,
@@ -624,10 +675,12 @@ def carry_tasks(carry_all=False):
         )
 
     if total:
+        print()
         print(
-            f"\nCarried {total} "
-            "task(s) into today."
+            f"Carried {total} "
+            f"task(s) into today."
         )
+
     else:
         print(
             "No unfinished tasks "
@@ -642,7 +695,7 @@ def carry_tasks(carry_all=False):
 def show_today():
     print(
         create_daily_file().read_text(
-            encoding="utf-8"
+            encoding="utf-8",
         )
     )
 
@@ -655,24 +708,40 @@ def open_today():
     )
 
     if editor:
+
         subprocess.call(
-            [editor, str(file)]
+            [
+                editor,
+                str(file),
+            ]
         )
+
         return
 
     if sys.platform.startswith(
         "win"
     ):
-        os.startfile(file)
+
+        os.startfile(
+            file
+        )
 
     elif sys.platform == "darwin":
+
         subprocess.call(
-            ["open", str(file)]
+            [
+                "open",
+                str(file),
+            ]
         )
 
     else:
+
         subprocess.call(
-            ["xdg-open", str(file)]
+            [
+                "xdg-open",
+                str(file),
+            ]
         )
 
 
@@ -686,25 +755,32 @@ def monday_of_week(day):
     )
 
 
-def print_simple_section(entries):
+def print_simple_section(
+    entries,
+):
     if not entries:
         print("None")
         return
 
     for day, entry in entries:
+
         text = entry
 
         if text.startswith("- "):
             text = text[2:]
 
         print(
-            f"{day:%a}: {text.strip()}"
+            f"{day:%a}: "
+            f"{text.strip()}"
         )
 
 
 def weekly_summary():
     today = date.today()
-    start = monday_of_week(today)
+
+    start = monday_of_week(
+        today
+    )
 
     sections = {
         "Actions": [],
@@ -714,6 +790,7 @@ def weekly_summary():
     }
 
     for offset in range(7):
+
         day = start + timedelta(
             days=offset
         )
@@ -721,24 +798,31 @@ def weekly_summary():
         if day > today:
             break
 
-        file = daily_file(day)
+        file = daily_file(
+            day
+        )
 
         if not file.exists():
             continue
 
         content = file.read_text(
-            encoding="utf-8"
+            encoding="utf-8",
         )
 
         for section in sections:
+
             for entry in extract_section(
                 content,
                 section,
             ):
+
                 sections[
                     section
                 ].append(
-                    (day, entry)
+                    (
+                        day,
+                        entry,
+                    )
                 )
 
     print()
@@ -754,27 +838,39 @@ def weekly_summary():
     print("\nOPEN ACTIONS")
 
     open_entries = [
-        (day, entry)
-        for day, entry
-        in sections["Actions"]
+        (
+            day,
+            entry,
+        )
+        for (
+            day,
+            entry,
+        ) in sections["Actions"]
         if entry.startswith("- [ ]")
     ]
 
     if open_entries:
+
         for day, entry in open_entries:
             print(
                 f"{day:%a}: "
                 f"{clean_task_text(entry)}"
             )
+
     else:
         print("None")
 
     print("\nCOMPLETED")
 
     completed_entries = [
-        (day, entry)
-        for day, entry
-        in sections["Actions"]
+        (
+            day,
+            entry,
+        )
+        for (
+            day,
+            entry,
+        ) in sections["Actions"]
         if (
             entry.startswith("- [x]")
             or entry.startswith("- [X]")
@@ -782,25 +878,33 @@ def weekly_summary():
     ]
 
     if completed_entries:
+
         for day, entry in completed_entries:
+
             print(
                 f"{day:%a}: "
                 f"{clean_task_text(entry)}"
             )
+
     else:
         print("None")
 
     print("\nDECISIONS")
+
     print_simple_section(
         sections["Decisions"]
     )
 
     print("\nRISKS / BLOCKERS")
+
     print_simple_section(
-        sections["Risks / Blockers"]
+        sections[
+            "Risks / Blockers"
+        ]
     )
 
     print("\nFOLLOW-UP")
+
     print_simple_section(
         sections["Follow-up"]
     )
@@ -814,7 +918,9 @@ def weekly_summary():
 
 def search_logs(query):
     if not DAILY_DIR.exists():
-        print("No worklogs found.")
+        print(
+            "No worklogs found."
+        )
         return
 
     query_lower = query.lower()
@@ -830,11 +936,19 @@ def search_logs(query):
             errors="ignore",
         )
 
-        for line_number, line in enumerate(
+        for (
+            line_number,
+            line,
+        ) in enumerate(
             content.splitlines(),
             start=1,
         ):
-            if query_lower in line.lower():
+
+            if (
+                query_lower
+                in line.lower()
+            ):
+
                 matches.append(
                     (
                         file,
@@ -844,9 +958,12 @@ def search_logs(query):
                 )
 
     if not matches:
+
         print(
-            f"No results for '{query}'."
+            f"No results for "
+            f"'{query}'."
         )
+
         return
 
     print()
@@ -860,6 +977,7 @@ def search_logs(query):
         line_number,
         line,
     ) in matches:
+
         print(
             f"{file.stem}:"
             f"{line_number}: "
@@ -870,325 +988,156 @@ def search_logs(query):
 
 
 # ============================================================
-# Jira templates
+# Minimal Jira templates
 # ============================================================
 
-def feature_template(title):
-    return f"""# FEATURE: {title}
+def epic_template(title):
+    return f"""# EPIC: {title}
 
-## Summary
+## Outcome
 
-{title}
+What significant outcome are we trying to achieve?
 
 
 ## Problem / Opportunity
 
-What problem are we solving?
-
-Why does this feature matter?
+Why does this need to happen?
 
 
-## Desired Outcome
+## MVP / Scope
 
-Describe the outcome rather than the implementation.
-
-
-## Benefit Hypothesis
-
-We believe:
-
-This will:
-
-We will know this is successful when:
-
-
-## Scope
-
-### Included
+In:
 
 -
--
+
+Out:
+
 -
 
 
-### Out of Scope
+## Success
+
+- [ ]
+
+
+## Candidate Features
+
+- [ ]
+
+
+## Dependencies / Decisions
 
 -
+
+"""
+
+
+def feature_template(title):
+    return f"""# FEATURE: {title}
+
+## Parent Epic
+
+EPIC-
+
+
+## Outcome
+
+What capability or stakeholder outcome will this Feature deliver?
+
+
+## Requirements
+
+- R1:
+- R2:
+
+
+## Constraints / NFRs
+
+Only include if they materially affect implementation or acceptance.
+
 -
 
 
-## Feature Acceptance Criteria
+## Acceptance Criteria
 
 - [ ]
 - [ ]
 - [ ]
 
 
-## Functional Requirements
-
--
--
-
-
-## Non-Functional Requirements
-
-Consider where applicable:
-
-- Performance
-- Timing
-- Reliability
-- Security
-- Safety
-- Resource usage
-- Compatibility
-- Maintainability
-
-
-## Dependencies
-
-### Hardware
-
--
-
-### Firmware
-
--
-
-### Software
-
--
-
-### External Teams
-
--
-
-### Third-party APIs / Libraries
-
--
-
-### Product Decisions Required
+## Dependencies / Decisions
 
 -
 
 
-## Assumptions
+## Verification
+
+How will we demonstrate that the Feature works?
 
 -
 
-
-## Risks / Unknowns
-
--
-
-
-## Candidate Flow Items
-
-### Flow Value
-
-- [ ]
-
-### Flow Accelerator
-
-- [ ]
-
-### Flow Defect
-
-- [ ]
-
-### Flow Quality
-
-- [ ]
-
-
-## Test / Verification Strategy
-
-How will we demonstrate that the overall feature works?
-
-
-## Definition of Done
-
-- [ ] Feature acceptance criteria met
-- [ ] Required flow items completed
-- [ ] Integration complete
-- [ ] Required reviews complete
-- [ ] Tests implemented and passing
-- [ ] Documentation updated
-- [ ] Known limitations recorded
-- [ ] Product acceptance obtained where required
 """
 
 
 def flow_value_template(title):
     return f"""# FLOW VALUE: {title}
 
-## Summary
-
-{title}
-
-
 ## Parent Feature
 
 FEATURE-
 
 
-## Value / Outcome
+## Outcome
 
-What new behaviour, capability or system value does this item deliver?
-
-
-## Context
-
-Why is this required?
-
-
-## Requirement
-
-The system shall:
+What working behaviour or capability will this deliver?
 
 
 ## Acceptance Criteria
 
 - [ ]
 - [ ]
-- [ ]
 
 
-## Interfaces / Components
-
--
-
-
-## Technical Context
-
-Relevant information to help engineering understand the problem
-without unnecessarily prescribing the implementation.
-
-
-## Dependencies
-
--
-
-
-## Assumptions
-
--
-
-
-## Risks / Unknowns
+## Dependencies / Decisions
 
 -
 
 
 ## Verification
 
-How will we prove the required behaviour works?
+-
 
-- [ ]
-- [ ]
-
-
-## Definition of Done
-
-- [ ] Acceptance criteria met
-- [ ] Implementation complete
-- [ ] Code reviewed
-- [ ] Tests implemented
-- [ ] Tests passing
-- [ ] Integration verified
-- [ ] Documentation updated where required
 """
 
 
 def flow_accelerator_template(title):
     return f"""# FLOW ACCELERATOR: {title}
 
-## Summary
-
-{title}
-
-
 ## Parent Feature
 
 FEATURE-
 
 
-## Purpose
-
-What future work or delivery does this accelerate?
-
-
-## Problem / Constraint
-
-What is currently slowing, blocking or complicating delivery?
-
-
-## Expected Improvement
-
-After this work is completed, we expect:
-
--
-
-
-## Work Required
-
--
--
--
-
-
 ## Enables
 
-Which Features or Flow Value items does this enable?
-
--
+What delivery does this unblock or accelerate?
 
 
-## Technical Notes
-
--
-
-
-## Dependencies
-
--
-
-
-## Risks / Unknowns
-
--
-
-
-## Acceptance Criteria
+## Done When
 
 - [ ]
 - [ ]
-- [ ]
 
 
-## Verification
+## Dependencies / Decisions
 
-How will we know this accelerator has achieved its purpose?
+-
 
-- [ ]
-
-
-## Definition of Done
-
-- [ ] Required capability available
-- [ ] Intended downstream work can proceed
-- [ ] Implementation reviewed
-- [ ] Tests complete where applicable
-- [ ] Documentation updated
 """
 
 
 def flow_defect_template(title):
     return f"""# FLOW DEFECT: {title}
-
-## Summary
-
-{title}
-
 
 ## Parent Feature
 
@@ -1197,188 +1146,69 @@ FEATURE-
 
 ## Problem
 
-Describe the incorrect behaviour.
+What is wrong?
 
 
 ## Expected Behaviour
 
-What should happen?
-
-
-## Actual Behaviour
-
-What currently happens?
+What should happen instead?
 
 
 ## Reproduction
 
+Only include when useful.
+
 1.
-2.
-3.
 
 
-## Environment
+## Done When
 
-### Hardware
-
--
-
-### Software / Firmware Version
-
--
-
-### Configuration
-
--
-
-
-## Impact
-
-What is the impact of this defect?
-
-
-## Severity / Priority
-
-Severity:
-
-Priority:
-
-
-## Root Cause
-
-Unknown / To be investigated
-
-
-## Fix
-
-Describe once understood:
-
--
-
-
-## Acceptance Criteria
-
-- [ ] Expected behaviour restored
+- [ ] Correct behaviour restored
 - [ ] Regression verified
-- [ ] No known adverse impact introduced
 
 
-## Verification
-
-- [ ]
-- [ ]
-
-
-## Regression Testing
-
-What else could this fix affect?
+## Dependencies / Decisions
 
 -
 
-
-## Definition of Done
-
-- [ ] Root cause understood where required
-- [ ] Fix implemented
-- [ ] Code reviewed
-- [ ] Defect verification passed
-- [ ] Regression tests passed
-- [ ] Documentation updated if required
 """
 
 
 def flow_quality_template(title):
     return f"""# FLOW QUALITY: {title}
 
-## Summary
-
-{title}
-
-
 ## Parent Feature
 
 FEATURE-
 
 
-## Quality Objective
+## Quality Target
 
-What aspect of quality are we improving?
-
-
-## Current State
-
-What is the current limitation, weakness or quality risk?
+What measurable quality improvement is required?
 
 
-## Desired State
-
-What should be improved after this work?
-
-
-## Quality Area
-
-Examples:
-
-- Test coverage
-- Reliability
-- Maintainability
-- Performance
-- Security
-- Static analysis
-- Technical debt
-- Documentation
-- Diagnostics / observability
-- Robustness
-
-
-## Work Required
-
--
--
--
-
-
-## Quality Criteria
+## Done When
 
 - [ ]
 - [ ]
-- [ ]
 
 
-## Measurement / Evidence
+## Evidence
 
 How will improvement be demonstrated?
 
 -
 
 
-## Dependencies
+## Dependencies / Decisions
 
 -
 
-
-## Risks
-
--
-
-
-## Verification
-
-- [ ]
-- [ ]
-
-
-## Definition of Done
-
-- [ ] Quality criteria met
-- [ ] Evidence captured
-- [ ] Relevant tests passing
-- [ ] Reviews complete
-- [ ] Documentation updated where required
 """
 
 
 JIRA_TEMPLATES = {
+    "epic": epic_template,
     "feature": feature_template,
     "flow-value": flow_value_template,
     "flow-accelerator": flow_accelerator_template,
@@ -1388,15 +1218,17 @@ JIRA_TEMPLATES = {
 
 
 # ============================================================
-# Markdown -> Jira Wiki Markup
+# Markdown -> Jira wiki markup
 # ============================================================
 
-def convert_inline_markdown(text):
-    """
-    Convert common inline Markdown constructs to Jira wiki markup.
-    """
+def convert_inline_markdown(
+    text,
+):
+    # Markdown links:
+    # [label](url)
+    # ->
+    # [label|url]
 
-    # Links: [label](url) -> [label|url]
     text = re.sub(
         r"\[([^\]]+)\]\(([^)]+)\)",
         r"[\1|\2]",
@@ -1420,23 +1252,27 @@ def convert_inline_markdown(text):
     return text
 
 
-def markdown_to_jira(markdown):
-    """
-    Convert the subset of Markdown used by Worklog templates
-    into Jira Data Center wiki markup.
-    """
-
+def markdown_to_jira(
+    markdown,
+):
     lines = markdown.splitlines()
 
     output = []
+
     in_code_block = False
     first_h1_skipped = False
+
     skip_jira_issue_section = False
 
     for line in lines:
 
-        # Do not copy local post-create metadata into Jira.
-        if line.strip() == "## Jira Issue":
+        # Do not copy local Jira metadata
+        # back into Jira description.
+
+        if (
+            line.strip()
+            == "## Jira Issue"
+        ):
             skip_jira_issue_section = True
             continue
 
@@ -1449,23 +1285,47 @@ def markdown_to_jira(markdown):
         if skip_jira_issue_section:
             continue
 
+        # Code blocks
         if line.startswith("```"):
+
             if in_code_block:
-                output.append("{code}")
+
+                output.append(
+                    "{code}"
+                )
+
                 in_code_block = False
+
             else:
-                output.append("{code}")
+
+                output.append(
+                    "{code}"
+                )
+
                 in_code_block = True
+
             continue
 
         if in_code_block:
-            output.append(line)
+
+            output.append(
+                line
+            )
+
             continue
 
-        # Skip the top H1 because Jira already has a Summary.
-        if line.startswith("# ") and not first_h1_skipped:
+        # Jira already has a Summary field,
+        # so skip the H1 title.
+
+        if (
+            line.startswith("# ")
+            and not first_h1_skipped
+        ):
+
             first_h1_skipped = True
             continue
+
+        # Headings
 
         heading_match = re.match(
             r"^(#{1,6})\s+(.+)$",
@@ -1473,6 +1333,7 @@ def markdown_to_jira(markdown):
         )
 
         if heading_match:
+
             level = len(
                 heading_match.group(1)
             )
@@ -1484,7 +1345,10 @@ def markdown_to_jira(markdown):
             output.append(
                 f"h{level}. {title}"
             )
+
             continue
+
+        # Markdown checkboxes
 
         task_match = re.match(
             r"^-\s+\[([ xX])\]\s*(.*)$",
@@ -1492,21 +1356,33 @@ def markdown_to_jira(markdown):
         )
 
         if task_match:
+
             checked = (
-                task_match.group(1).lower()
+                task_match
+                .group(1)
+                .lower()
                 == "x"
             )
 
-            marker = "[x]" if checked else "[ ]"
+            marker = (
+                "[x]"
+                if checked
+                else "[ ]"
+            )
 
-            text = convert_inline_markdown(
-                task_match.group(2)
+            text = (
+                convert_inline_markdown(
+                    task_match.group(2)
+                )
             )
 
             output.append(
                 f"* {marker} {text}"
             )
+
             continue
+
+        # Bullets
 
         bullet_match = re.match(
             r"^(\s*)-\s+(.*)$",
@@ -1514,6 +1390,7 @@ def markdown_to_jira(markdown):
         )
 
         if bullet_match:
+
             indent = len(
                 bullet_match.group(1)
             )
@@ -1529,7 +1406,10 @@ def markdown_to_jira(markdown):
                 f"{stars} "
                 f"{convert_inline_markdown(bullet_match.group(2))}"
             )
+
             continue
+
+        # Numbered lists
 
         numbered_match = re.match(
             r"^(\s*)\d+\.\s+(.*)$",
@@ -1537,6 +1417,7 @@ def markdown_to_jira(markdown):
         )
 
         if numbered_match:
+
             indent = len(
                 numbered_match.group(1)
             )
@@ -1552,25 +1433,37 @@ def markdown_to_jira(markdown):
                 f"{hashes} "
                 f"{convert_inline_markdown(numbered_match.group(2))}"
             )
+
             continue
 
+        # Blockquotes
+
         if line.startswith("> "):
+
             output.append(
                 "bq. "
                 + convert_inline_markdown(
                     line[2:]
                 )
             )
+
             continue
+
+        # Horizontal rule
 
         if re.match(
             r"^[-*_]{3,}$",
             line.strip(),
         ):
-            output.append("----")
+
+            output.append(
+                "----"
+            )
+
             continue
 
-        # Strip internal worklog comments.
+        # Remove Worklog metadata comments
+
         line = re.sub(
             r"\s*<!--.*?-->\s*",
             "",
@@ -1583,7 +1476,10 @@ def markdown_to_jira(markdown):
             )
         )
 
-    return "\n".join(output).strip() + "\n"
+    return (
+        "\n".join(output).strip()
+        + "\n"
+    )
 
 
 # ============================================================
@@ -1592,15 +1488,17 @@ def markdown_to_jira(markdown):
 
 def safe_filename(text):
     safe = "".join(
-        char
-        if char.isalnum()
+        character
+        if character.isalnum()
         else "-"
-        for char in text.lower()
+        for character
+        in text.lower()
     )
 
     return "-".join(
         part
-        for part in safe.split("-")
+        for part
+        in safe.split("-")
         if part
     )
 
@@ -1618,7 +1516,7 @@ def sync_jira_text(
     markdown_path,
 ):
     content = markdown_path.read_text(
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
     jira_content = markdown_to_jira(
@@ -1656,10 +1554,12 @@ def create_jira_draft(
         )
     )
 
-    content = JIRA_TEMPLATES[
-        ticket_type
-    ](
-        title
+    content = (
+        JIRA_TEMPLATES[
+            ticket_type
+        ](
+            title
+        )
     )
 
     filename.write_text(
@@ -1674,15 +1574,29 @@ def create_jira_draft(
     print()
     print(
         "Created Jira "
-        f"{JIRA_DISPLAY_NAMES[ticket_type]} draft:"
+        f"{JIRA_DISPLAY_NAMES[ticket_type]} "
+        "draft:"
     )
-    print(filename)
+
+    print(
+        filename
+    )
 
     print()
-    print("Jira-ready text:")
-    print(jira_file)
+    print(
+        "Jira-ready text:"
+    )
+
+    print(
+        jira_file
+    )
+
     print()
 
+
+# ============================================================
+# Interactive Jira draft creation
+# ============================================================
 
 def interactive_jira():
     options = list(
@@ -1690,48 +1604,69 @@ def interactive_jira():
     )
 
     print()
-    print("CREATE JIRA ITEM")
-    print("=" * 40)
+    print(
+        "CREATE JIRA ITEM"
+    )
+    print(
+        "=" * 40
+    )
     print()
 
-    for number, (
-        _,
-        display_name,
+    for (
+        number,
+        (
+            _,
+            display_name,
+        ),
     ) in enumerate(
         options,
         start=1,
     ):
+
         print(
-            f"{number}. {display_name}"
+            f"{number}. "
+            f"{display_name}"
         )
 
     print()
 
     while True:
+
         choice = input(
             "Type: "
         ).strip()
 
         try:
-            number = int(choice)
 
-            if 1 <= number <= len(options):
+            number = int(
+                choice
+            )
+
+            if (
+                1
+                <= number
+                <= len(options)
+            ):
                 break
 
         except ValueError:
             pass
 
         print(
-            f"Choose 1-{len(options)}."
+            f"Choose 1-"
+            f"{len(options)}."
         )
 
-    ticket_type = options[
-        number - 1
-    ][0]
+    ticket_type = (
+        options[
+            number - 1
+        ][0]
+    )
 
     print()
 
     while True:
+
         title = input(
             "Title: "
         ).strip()
@@ -1739,7 +1674,9 @@ def interactive_jira():
         if title:
             break
 
-        print("A title is required.")
+        print(
+            "A title is required."
+        )
 
     create_jira_draft(
         ticket_type,
@@ -1748,12 +1685,14 @@ def interactive_jira():
 
 
 # ============================================================
-# Find / parse Jira drafts
+# Locate Jira drafts
 # ============================================================
 
 def latest_jira_markdown():
     files = list(
-        JIRA_DIR.glob("*.md")
+        JIRA_DIR.glob(
+            "*.md"
+        )
     )
 
     if not files:
@@ -1761,9 +1700,8 @@ def latest_jira_markdown():
 
     return max(
         files,
-        key=lambda file: (
-            file.stat().st_mtime
-        ),
+        key=lambda file:
+        file.stat().st_mtime,
     )
 
 
@@ -1771,36 +1709,45 @@ def resolve_jira_draft(
     value=None,
 ):
     if value is None:
-        file = latest_jira_markdown()
+
+        file = (
+            latest_jira_markdown()
+        )
 
         if file is None:
+
             raise RuntimeError(
                 "No Jira drafts found."
             )
 
         return file
 
-    candidate = Path(value).expanduser()
+    candidate = Path(
+        value
+    ).expanduser()
 
     if not candidate.exists():
+
         candidate = (
             JIRA_DIR / value
         )
 
-    # If .jira.txt was supplied,
-    # prefer the associated Markdown file.
-    if (
-        candidate.name.endswith(
-            ".jira.txt"
-        )
+    # If user supplies generated
+    # .jira.txt, resolve back to .md.
+
+    if candidate.name.endswith(
+        ".jira.txt"
     ):
-        name = candidate.name[
-            :-len(".jira.txt")
-        ]
+
+        base_name = (
+            candidate.name[
+                :-len(".jira.txt")
+            ]
+        )
 
         markdown_candidate = (
             candidate.with_name(
-                name + ".md"
+                base_name + ".md"
             )
         )
 
@@ -1808,11 +1755,14 @@ def resolve_jira_draft(
             candidate = markdown_candidate
 
     if not candidate.exists():
+
         raise RuntimeError(
-            f"Draft not found: {value}"
+            f"Draft not found: "
+            f"{value}"
         )
 
     if candidate.suffix != ".md":
+
         raise RuntimeError(
             "jira-copy and jira-create "
             "expect a Markdown Jira draft."
@@ -1820,6 +1770,10 @@ def resolve_jira_draft(
 
     return candidate
 
+
+# ============================================================
+# Parse Jira drafts
+# ============================================================
 
 def parse_jira_draft(
     markdown_path,
@@ -1831,72 +1785,59 @@ def parse_jira_draft(
     first_heading = None
 
     for line in content.splitlines():
+
         if line.startswith("# "):
-            first_heading = line[2:].strip()
+
+            first_heading = (
+                line[2:].strip()
+            )
+
             break
 
     if not first_heading:
+
         raise RuntimeError(
-            "Could not find Jira draft heading."
+            "Could not find Jira "
+            "draft heading."
         )
 
     match = re.match(
-        r"^(FEATURE|FLOW VALUE|"
-        r"FLOW ACCELERATOR|FLOW DEFECT|"
+        r"^(EPIC|FEATURE|"
+        r"FLOW VALUE|"
+        r"FLOW ACCELERATOR|"
+        r"FLOW DEFECT|"
         r"FLOW QUALITY):\s*(.+)$",
         first_heading,
         re.IGNORECASE,
     )
 
     if not match:
+
         raise RuntimeError(
-            "The first heading does not identify "
-            "a recognised Worklog Jira type."
+            "The first heading does not "
+            "identify a recognised "
+            "Worklog Jira type."
         )
 
     heading_type = (
         match.group(1).upper()
     )
 
-    title = match.group(2).strip()
+    title = (
+        match.group(2).strip()
+    )
 
-    ticket_type = JIRA_HEADING_NAMES[
-        heading_type
-    ]
+    ticket_type = (
+        JIRA_HEADING_NAMES[
+            heading_type
+        ]
+    )
 
     return (
         ticket_type,
         title,
         content,
     )
-
-
-def extract_section_first_value(
-    markdown,
-    section_name,
-):
-    lines = markdown.splitlines()
-
-    heading = f"## {section_name}"
-
-    found = False
-
-    for line in lines:
-
-        if line.strip() == heading:
-            found = True
-            continue
-
-        if (
-            found
-            and line.startswith("## ")
-        ):
-            return None
-
-        if found and line.strip():
-            return line.strip()
-
-    return None
 
 
 # ============================================================
@@ -1907,6 +1848,7 @@ def copy_to_clipboard(text):
     commands = []
 
     if sys.platform == "darwin":
+
         commands = [
             ["pbcopy"],
         ]
@@ -1914,15 +1856,25 @@ def copy_to_clipboard(text):
     elif sys.platform.startswith(
         "win"
     ):
+
         commands = [
             ["clip"],
         ]
 
     else:
+
         commands = [
             ["wl-copy"],
-            ["xclip", "-selection", "clipboard"],
-            ["xsel", "--clipboard", "--input"],
+            [
+                "xclip",
+                "-selection",
+                "clipboard",
+            ],
+            [
+                "xsel",
+                "--clipboard",
+                "--input",
+            ],
         ]
 
     for command in commands:
@@ -1949,7 +1901,9 @@ def jira_copy(
     draft=None,
 ):
     markdown_file = (
-        resolve_jira_draft(draft)
+        resolve_jira_draft(
+            draft
+        )
     )
 
     jira_file = sync_jira_text(
@@ -1957,24 +1911,32 @@ def jira_copy(
     )
 
     text = jira_file.read_text(
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
-    if copy_to_clipboard(text):
+    if copy_to_clipboard(
+        text
+    ):
+
         print(
-            "Copied Jira-ready description "
-            "to clipboard."
+            "Copied Jira-ready "
+            "description to clipboard."
         )
+
         print(
             f"Source: {markdown_file}"
         )
+
     else:
+
         print(
-            "No supported clipboard command "
-            "was found."
+            "No supported clipboard "
+            "command was found."
         )
+
         print(
-            f"Jira-ready text: {jira_file}"
+            f"Jira-ready text: "
+            f"{jira_file}"
         )
 
 
@@ -1985,15 +1947,18 @@ def jira_copy(
 def jira_issue_type_name(
     ticket_type,
 ):
-    env_name = (
+    environment_name = (
         "JIRA_TYPE_"
         + ticket_type
         .upper()
-        .replace("-", "_")
+        .replace(
+            "-",
+            "_",
+        )
     )
 
     return os.environ.get(
-        env_name,
+        environment_name,
         JIRA_DISPLAY_NAMES[
             ticket_type
         ],
@@ -2011,14 +1976,23 @@ def load_json_environment(
         return {}
 
     try:
-        parsed = json.loads(value)
-    except json.JSONDecodeError as error:
-        raise RuntimeError(
-            f"{name} contains invalid JSON: "
-            f"{error}"
+
+        parsed = json.loads(
+            value
         )
 
-    if not isinstance(parsed, dict):
+    except json.JSONDecodeError as error:
+
+        raise RuntimeError(
+            f"{name} contains invalid "
+            f"JSON: {error}"
+        )
+
+    if not isinstance(
+        parsed,
+        dict,
+    ):
+
         raise RuntimeError(
             f"{name} must contain "
             "a JSON object."
@@ -2041,7 +2015,10 @@ def jira_extra_fields(
     suffix = (
         ticket_type
         .upper()
-        .replace("-", "_")
+        .replace(
+            "-",
+            "_",
+        )
     )
 
     fields.update(
@@ -2072,27 +2049,35 @@ def jira_auth_header():
     )
 
     if auth_mode:
+
         auth_mode = (
             auth_mode.lower()
         )
 
     elif token:
+
         auth_mode = "pat"
 
     elif username and password:
+
         auth_mode = "basic"
 
     else:
+
         raise RuntimeError(
-            "No Jira authentication configured.\n"
-            "Set JIRA_TOKEN for PAT authentication "
-            "or JIRA_USERNAME and JIRA_PASSWORD "
-            "for basic authentication."
+            "No Jira authentication "
+            "configured.\n"
+            "Set JIRA_TOKEN for PAT "
+            "authentication or "
+            "JIRA_USERNAME and "
+            "JIRA_PASSWORD for basic "
+            "authentication."
         )
 
     if auth_mode == "pat":
 
         if not token:
+
             raise RuntimeError(
                 "JIRA_AUTH=pat requires "
                 "JIRA_TOKEN."
@@ -2105,21 +2090,32 @@ def jira_auth_header():
 
     if auth_mode == "basic":
 
-        if not username or not password:
+        if (
+            not username
+            or not password
+        ):
+
             raise RuntimeError(
-                "Basic authentication requires "
-                "JIRA_USERNAME and JIRA_PASSWORD."
+                "Basic authentication "
+                "requires JIRA_USERNAME "
+                "and JIRA_PASSWORD."
             )
 
         credentials = (
-            f"{username}:{password}"
+            f"{username}:"
+            f"{password}"
         )
 
-        encoded = base64.b64encode(
-            credentials.encode(
-                "utf-8"
+        encoded = (
+            base64.b64encode(
+                credentials.encode(
+                    "utf-8"
+                )
             )
-        ).decode("ascii")
+            .decode(
+                "ascii"
+            )
+        )
 
         return (
             "Authorization",
@@ -2138,15 +2134,20 @@ def jira_ssl_context():
     )
 
     if ca_bundle:
-        return ssl.create_default_context(
-            cafile=ca_bundle
+
+        return (
+            ssl.create_default_context(
+                cafile=ca_bundle
+            )
         )
 
-    return ssl.create_default_context()
+    return (
+        ssl.create_default_context()
+    )
 
 
 # ============================================================
-# Jira creation
+# Jira issue creation
 # ============================================================
 
 def existing_jira_key(
@@ -2168,10 +2169,12 @@ def existing_jira_key(
 def build_jira_payload(
     markdown_file,
 ):
-    ticket_type, title, markdown = (
-        parse_jira_draft(
-            markdown_file
-        )
+    (
+        ticket_type,
+        title,
+        markdown,
+    ) = parse_jira_draft(
+        markdown_file
     )
 
     project_key = os.environ.get(
@@ -2179,8 +2182,10 @@ def build_jira_payload(
     )
 
     if not project_key:
+
         raise RuntimeError(
-            "JIRA_PROJECT_KEY is not set."
+            "JIRA_PROJECT_KEY "
+            "is not set."
         )
 
     description = markdown_to_jira(
@@ -2200,47 +2205,97 @@ def build_jira_payload(
         },
     }
 
-    # Optional common labels.
+    # --------------------------------------------------------
+    # Optional labels
+    # --------------------------------------------------------
+
     labels = os.environ.get(
         "JIRA_LABELS"
     )
 
     if labels:
+
         fields["labels"] = [
             item.strip()
-            for item in labels.split(",")
+            for item
+            in labels.split(",")
             if item.strip()
         ]
 
-    # Optional company-specific custom fields.
+    # --------------------------------------------------------
+    # Company-specific Jira fields
+    # --------------------------------------------------------
+
     fields.update(
         jira_extra_fields(
             ticket_type
         )
     )
 
-    # Optional Parent Feature custom field.
-    #
-    # Example:
-    # JIRA_PARENT_FEATURE_FIELD=customfield_12345
-    #
-    parent_field = os.environ.get(
-        "JIRA_PARENT_FEATURE_FIELD"
-    )
+    # --------------------------------------------------------
+    # Feature -> Epic relationship
+    # --------------------------------------------------------
 
-    if parent_field:
-        parent = (
-            extract_section_first_value(
-                markdown,
-                "Parent Feature",
+    if ticket_type == "feature":
+
+        parent_epic_field = (
+            os.environ.get(
+                "JIRA_PARENT_EPIC_FIELD"
             )
         )
 
-        if (
-            parent
-            and parent != "FEATURE-"
-        ):
-            fields[parent_field] = parent
+        if parent_epic_field:
+
+            parent = (
+                extract_section_first_value(
+                    markdown,
+                    "Parent Epic",
+                )
+            )
+
+            if (
+                parent
+                and parent != "EPIC-"
+            ):
+
+                fields[
+                    parent_epic_field
+                ] = parent
+
+    # --------------------------------------------------------
+    # Flow item -> Feature relationship
+    # --------------------------------------------------------
+
+    if ticket_type in {
+        "flow-value",
+        "flow-accelerator",
+        "flow-defect",
+        "flow-quality",
+    }:
+
+        parent_feature_field = (
+            os.environ.get(
+                "JIRA_PARENT_FEATURE_FIELD"
+            )
+        )
+
+        if parent_feature_field:
+
+            parent = (
+                extract_section_first_value(
+                    markdown,
+                    "Parent Feature",
+                )
+            )
+
+            if (
+                parent
+                and parent != "FEATURE-"
+            ):
+
+                fields[
+                    parent_feature_field
+                ] = parent
 
     return {
         "fields": fields
@@ -2253,7 +2308,7 @@ def record_created_issue(
     issue_url,
 ):
     content = markdown_file.read_text(
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
     marker = (
@@ -2298,10 +2353,12 @@ def jira_create(
         )
     )
 
-    ticket_type, title, markdown = (
-        parse_jira_draft(
-            markdown_file
-        )
+    (
+        ticket_type,
+        title,
+        markdown,
+    ) = parse_jira_draft(
+        markdown_file
     )
 
     already_created = (
@@ -2314,14 +2371,19 @@ def jira_create(
         already_created
         and not force
     ):
+
         print(
-            f"This draft was already created "
-            f"as {already_created}."
+            f"This draft was already "
+            f"created as "
+            f"{already_created}."
         )
+
         print(
             "Use --force only if you "
-            "intentionally want a duplicate."
+            "intentionally want "
+            "a duplicate."
         )
+
         return
 
     payload = build_jira_payload(
@@ -2333,12 +2395,14 @@ def jira_create(
     )
 
     if not base_url:
+
         raise RuntimeError(
-            "JIRA_BASE_URL is not set."
+            "JIRA_BASE_URL "
+            "is not set."
         )
 
-    base_url = (
-        base_url.rstrip("/")
+    base_url = base_url.rstrip(
+        "/"
     )
 
     endpoint = (
@@ -2347,74 +2411,113 @@ def jira_create(
     )
 
     print()
-    print("JIRA CREATE")
-    print("=" * 60)
     print(
-        "Type:    "
+        "JIRA CREATE"
+    )
+    print(
+        "=" * 60
+    )
+
+    print(
+        "Type:      "
         f"{JIRA_DISPLAY_NAMES[ticket_type]}"
     )
+
     print(
-        f"Summary: {title}"
+        f"Summary:   {title}"
     )
+
     print(
-        "Project: "
+        "Project:   "
         f"{payload['fields']['project']['key']}"
     )
+
     print(
         "Jira type: "
         f"{payload['fields']['issuetype']['name']}"
     )
+
     print(
-        f"Draft:   {markdown_file}"
+        f"Draft:     {markdown_file}"
     )
+
     print(
-        f"Server:  {base_url}"
+        f"Server:    {base_url}"
     )
+
     print()
 
+    # --------------------------------------------------------
+    # Dry run
+    # --------------------------------------------------------
+
     if dry_run:
-        safe_payload = payload.copy()
 
         print(
             json.dumps(
-                safe_payload,
+                payload,
                 indent=2,
             )
         )
+
         return
 
+    # --------------------------------------------------------
+    # Confirmation
+    # --------------------------------------------------------
+
     if not assume_yes:
+
         answer = input(
-            "Create this Jira issue? [y/N]: "
+            "Create this Jira issue? "
+            "[y/N]: "
         ).strip().lower()
 
         if answer not in (
             "y",
             "yes",
         ):
-            print("Cancelled.")
+
+            print(
+                "Cancelled."
+            )
+
             return
 
-    payload_bytes = json.dumps(
-        payload
-    ).encode("utf-8")
+    # --------------------------------------------------------
+    # HTTP request
+    # --------------------------------------------------------
 
-    auth_name, auth_value = (
-        jira_auth_header()
+    payload_bytes = (
+        json.dumps(
+            payload
+        )
+        .encode(
+            "utf-8"
+        )
     )
+
+    (
+        auth_name,
+        auth_value,
+    ) = jira_auth_header()
 
     request = urllib.request.Request(
         endpoint,
         data=payload_bytes,
         method="POST",
         headers={
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            auth_name: auth_value,
+            "Accept":
+                "application/json",
+            "Content-Type":
+                "application/json",
+            auth_name:
+                auth_value,
         },
     )
 
     try:
+
         with urllib.request.urlopen(
             request,
             context=jira_ssl_context(),
@@ -2422,24 +2525,32 @@ def jira_create(
         ) as response:
 
             response_body = (
-                response.read().decode(
+                response
+                .read()
+                .decode(
                     "utf-8"
                 )
             )
 
     except urllib.error.HTTPError as error:
 
-        body = error.read().decode(
-            "utf-8",
-            errors="replace",
+        body = (
+            error
+            .read()
+            .decode(
+                "utf-8",
+                errors="replace",
+            )
         )
 
+        print()
         print(
-            f"\nJira returned HTTP "
+            f"Jira returned HTTP "
             f"{error.code}."
         )
 
         try:
+
             error_json = json.loads(
                 body
             )
@@ -2452,27 +2563,48 @@ def jira_create(
             )
 
         except json.JSONDecodeError:
-            print(body)
+
+            print(
+                body
+            )
 
         return
 
     except urllib.error.URLError as error:
+
+        print()
         print(
-            "\nUnable to connect to Jira:"
+            "Unable to connect "
+            "to Jira:"
         )
-        print(error.reason)
+
+        print(
+            error.reason
+        )
+
         return
 
+    # --------------------------------------------------------
+    # Parse Jira response
+    # --------------------------------------------------------
+
     try:
+
         result = json.loads(
             response_body
         )
 
     except json.JSONDecodeError:
+
         print(
-            "Jira returned an unexpected response:"
+            "Jira returned an "
+            "unexpected response:"
         )
-        print(response_body)
+
+        print(
+            response_body
+        )
+
         return
 
     issue_key = result.get(
@@ -2480,15 +2612,22 @@ def jira_create(
     )
 
     if not issue_key:
+
         print(
-            "Issue may have been created, "
-            "but Jira did not return a key."
+            "Issue may have been "
+            "created, but Jira did "
+            "not return an issue key."
         )
-        print(result)
+
+        print(
+            result
+        )
+
         return
 
     issue_url = (
-        f"{base_url}/browse/"
+        f"{base_url}"
+        f"/browse/"
         f"{issue_key}"
     )
 
@@ -2499,12 +2638,22 @@ def jira_create(
     )
 
     print()
-    print("=" * 60)
+    print(
+        "=" * 60
+    )
+
     print(
         f"Created: {issue_key}"
     )
-    print(issue_url)
-    print("=" * 60)
+
+    print(
+        issue_url
+    )
+
+    print(
+        "=" * 60
+    )
+
     print()
 
 
@@ -2528,17 +2677,28 @@ def main():
         required=True,
     )
 
+    # --------------------------------------------------------
+    # Initialise
+    # --------------------------------------------------------
+
     sub.add_parser(
         "init",
-        help="Initialise worklog",
+        help=(
+            "Initialise worklog"
+        ),
     )
 
-    # Capture commands
+    # --------------------------------------------------------
+    # Capture
+    # --------------------------------------------------------
+
     for command in SECTIONS:
 
         cmd = sub.add_parser(
             command,
-            help=f"Add a {command}",
+            help=(
+                f"Add a {command}"
+            ),
         )
 
         cmd.add_argument(
@@ -2546,26 +2706,40 @@ def main():
             nargs="+",
         )
 
-    # Views
+    # --------------------------------------------------------
+    # Daily views
+    # --------------------------------------------------------
+
     sub.add_parser(
         "today",
-        help="Show today's worklog",
+        help=(
+            "Show today's worklog"
+        ),
     )
 
     sub.add_parser(
         "open",
-        help="Open today's worklog",
+        help=(
+            "Open today's worklog"
+        ),
     )
 
+    # --------------------------------------------------------
     # Tasks
+    # --------------------------------------------------------
+
     sub.add_parser(
         "tasks",
-        help="Show today's tasks",
+        help=(
+            "Show today's tasks"
+        ),
     )
 
     done = sub.add_parser(
         "done",
-        help="Complete an open task",
+        help=(
+            "Complete an open task"
+        ),
     )
 
     done.add_argument(
@@ -2575,7 +2749,9 @@ def main():
 
     undo = sub.add_parser(
         "undo",
-        help="Reopen a completed task",
+        help=(
+            "Reopen a completed task"
+        ),
     )
 
     undo.add_argument(
@@ -2594,18 +2770,32 @@ def main():
     carry.add_argument(
         "--all",
         action="store_true",
+        help=(
+            "Carry all outstanding "
+            "historical tasks"
+        ),
     )
 
+    # --------------------------------------------------------
     # Reports
+    # --------------------------------------------------------
+
     sub.add_parser(
         "week",
-        help="Generate weekly summary",
+        help=(
+            "Generate weekly summary"
+        ),
     )
 
+    # --------------------------------------------------------
     # Search
+    # --------------------------------------------------------
+
     search = sub.add_parser(
         "search",
-        help="Search worklogs",
+        help=(
+            "Search worklogs"
+        ),
     )
 
     search.add_argument(
@@ -2613,11 +2803,14 @@ def main():
         nargs="+",
     )
 
+    # --------------------------------------------------------
     # Jira draft
+    # --------------------------------------------------------
+
     jira = sub.add_parser(
         "jira",
         help=(
-            "Create Jira draft "
+            "Create a Jira draft "
             "interactively or directly"
         ),
     )
@@ -2635,14 +2828,17 @@ def main():
         nargs="*",
     )
 
+    # --------------------------------------------------------
     # Jira copy
+    # --------------------------------------------------------
+
     jira_copy_parser = (
         sub.add_parser(
             "jira-copy",
             help=(
-                "Convert the latest Jira "
-                "draft and copy it "
-                "to the clipboard"
+                "Convert Jira Markdown "
+                "to Jira wiki markup and "
+                "copy it to clipboard"
             ),
         )
     )
@@ -2652,13 +2848,16 @@ def main():
         nargs="?",
     )
 
+    # --------------------------------------------------------
     # Jira create
+    # --------------------------------------------------------
+
     jira_create_parser = (
         sub.add_parser(
             "jira-create",
             help=(
-                "Create a Jira issue from "
-                "a Worklog Jira draft"
+                "Create a Jira issue "
+                "from a Worklog draft"
             ),
         )
     )
@@ -2672,8 +2871,8 @@ def main():
         "--dry-run",
         action="store_true",
         help=(
-            "Show the payload without "
-            "creating the issue"
+            "Show the Jira REST payload "
+            "without creating an issue"
         ),
     )
 
@@ -2681,7 +2880,8 @@ def main():
         "--yes",
         action="store_true",
         help=(
-            "Skip the confirmation prompt"
+            "Skip Jira creation "
+            "confirmation"
         ),
     )
 
@@ -2689,60 +2889,84 @@ def main():
         "--force",
         action="store_true",
         help=(
-            "Allow creation even if this "
-            "draft was previously created"
+            "Create even if the draft "
+            "was already submitted"
         ),
     )
 
+    # --------------------------------------------------------
+    # Parse arguments
+    # --------------------------------------------------------
+
     args = parser.parse_args()
 
+    # --------------------------------------------------------
+    # Execute
+    # --------------------------------------------------------
+
     if args.command == "init":
+
         initialise()
 
     elif args.command in SECTIONS:
+
         add_entry(
             args.command,
-            " ".join(args.text),
+            " ".join(
+                args.text
+            ),
         )
 
     elif args.command == "today":
+
         show_today()
 
     elif args.command == "open":
+
         open_today()
 
     elif args.command == "tasks":
+
         show_tasks()
 
     elif args.command == "done":
+
         complete_task(
             args.task_number
         )
 
     elif args.command == "undo":
+
         undo_task(
             args.task_number
         )
 
     elif args.command == "carry":
+
         carry_tasks(
             args.all
         )
 
     elif args.command == "week":
+
         weekly_summary()
 
     elif args.command == "search":
+
         search_logs(
-            " ".join(args.query)
+            " ".join(
+                args.query
+            )
         )
 
     elif args.command == "jira":
 
         if args.ticket_type is None:
+
             interactive_jira()
 
         else:
+
             title = " ".join(
                 args.title
             ).strip()
@@ -2755,11 +2979,15 @@ def main():
                     ]
                 )
 
+                print()
                 print(
-                    f"\nCreating {display}\n"
+                    f"Creating "
+                    f"{display}"
                 )
+                print()
 
                 while not title:
+
                     title = input(
                         "Title: "
                     ).strip()
@@ -2770,11 +2998,13 @@ def main():
             )
 
     elif args.command == "jira-copy":
+
         jira_copy(
             args.draft
         )
 
     elif args.command == "jira-create":
+
         jira_create(
             draft=args.draft,
             dry_run=args.dry_run,
@@ -2783,17 +3013,33 @@ def main():
         )
 
 
+# ============================================================
+# Entry point
+# ============================================================
+
 if __name__ == "__main__":
+
     try:
+
         main()
 
     except KeyboardInterrupt:
-        print("\nCancelled.")
-        sys.exit(130)
+
+        print(
+            "\nCancelled."
+        )
+
+        sys.exit(
+            130
+        )
 
     except RuntimeError as error:
+
         print(
             f"Error: {error}",
             file=sys.stderr,
         )
-        sys.exit(1)
+
+        sys.exit(
+            1
+        )
